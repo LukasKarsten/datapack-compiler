@@ -33,6 +33,7 @@ pub enum ParseError {
     IncompleteLocalCoordinates(IncompleteLocalCoordinatesError),
     ExpectedLocalCoordinate(ExpectedLocalCoordinateError),
     MixedCoordinates(MixedCoordiantesError),
+    InvalidColor(InvalidColorError),
 }
 
 impl EmitDiagnostic for ParseError {
@@ -51,6 +52,7 @@ impl EmitDiagnostic for ParseError {
             Self::IncompleteLocalCoordinates(error) => error.emit(ctx),
             Self::ExpectedLocalCoordinate(error) => error.emit(ctx),
             Self::MixedCoordinates(error) => error.emit(ctx),
+            Self::InvalidColor(error) => error.emit(ctx),
         }
     }
 }
@@ -266,6 +268,17 @@ pub struct MixedCoordiantesError {
 impl EmitDiagnostic for MixedCoordiantesError {
     fn emit(&self, _: &ParseContext<'_>) -> Diagnostic {
         Diagnostic::error(self.span, "Cannot mix world and local coordinates")
+    }
+}
+
+#[derive(Debug)]
+pub struct InvalidColorError {
+    pub span: Span,
+}
+
+impl EmitDiagnostic for InvalidColorError {
+    fn emit(&self, _: &ParseContext<'_>) -> Diagnostic {
+        Diagnostic::error(self.span, "Invalid color")
     }
 }
 

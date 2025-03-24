@@ -1,3 +1,4 @@
+pub mod arguments;
 mod build_tree;
 pub mod cst;
 pub mod diagnostics;

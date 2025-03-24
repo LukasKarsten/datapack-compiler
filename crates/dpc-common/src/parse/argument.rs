@@ -3,6 +3,7 @@ use std::fmt;
 use smallvec::SmallVec;
 
 use crate::{
+    arguments::ChatColor,
     cst,
     intern::{Interner, StaticInterner},
     span::Span,
@@ -11,9 +12,10 @@ use crate::{
 use super::{
     Reader,
     errors::{
-        ExpectedLocalCoordinateError, IncompleteLocalCoordinatesError, InvalidStringCharsError,
-        MixedCoordiantesError, ParseBoolError, ParseDoubleError, ParseError, ParseFloatError,
-        ParseIntegerError, QuotedSingleWordError, UnterminatedStringError,
+        ExpectedLocalCoordinateError, IncompleteLocalCoordinatesError, InvalidColorError,
+        InvalidStringCharsError, MixedCoordiantesError, ParseBoolError, ParseDoubleError,
+        ParseError, ParseFloatError, ParseIntegerError, QuotedSingleWordError,
+        UnterminatedStringError,
     },
 };
 
@@ -106,7 +108,7 @@ impl Argument {
             Self::BlockPos => Ok(cst::ArgumentValue::Coordinates3(parse_block_pos(ctx))),
             Self::BlockPredicate => todo!(),
             Self::BlockState => todo!(),
-            Self::Color => todo!(),
+            Self::Color => Ok(cst::ArgumentValue::Color(parse_color(ctx))),
             Self::ColumnPos => Ok(cst::ArgumentValue::Coordinates2(parse_column_pos(ctx))),
             Self::Component => todo!(),
             Self::Dimension => todo!(),
@@ -522,4 +524,20 @@ fn parse_vec2(ctx: &mut ParseArgContext<'_, '_>) -> cst::Coordinates<2> {
 
 fn parse_column_pos(ctx: &mut ParseArgContext<'_, '_>) -> cst::Coordinates<2> {
     parse_world_coordinates(ctx, |ctx, _| parse_double(ctx))
+}
+
+fn parse_color(ctx: &mut ParseArgContext<'_, '_>) -> cst::Color {
+    let (span, name) = ctx
+        .reader
+        .parse_with_span(|reader| reader.read_until(char::is_whitespace));
+
+    let color = ChatColor::from_string(name);
+
+    if color.is_none() {
+        ctx.error(ParseError::InvalidColor(InvalidColorError {
+            span: span.into(),
+        }));
+    }
+
+    cst::Color { color }
 }

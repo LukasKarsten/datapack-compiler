@@ -1,6 +1,6 @@
 use smallvec::SmallVec;
 
-use crate::{intern::Symbol, parse::errors::ParseError, span::Span};
+use crate::{arguments::ChatColor, intern::Symbol, parse::errors::ParseError, span::Span};
 
 #[derive(Debug)]
 pub enum Item {
@@ -40,6 +40,7 @@ pub enum ArgumentValue {
     Angle(Angle),
     Coordinates2(Coordinates<2>),
     Coordinates3(Coordinates<3>),
+    Color(Color),
 }
 
 #[derive(Debug)]
@@ -119,6 +120,11 @@ pub struct WorldCoordinate {
 pub enum Coordinates<const N: usize> {
     World([WorldCoordinate; N]),
     Local([Double; N]),
+}
+
+#[derive(Debug)]
+pub struct Color {
+    pub color: Option<ChatColor>,
 }
 
 pub trait Visitor: Sized {
