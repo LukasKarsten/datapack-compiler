@@ -1,0 +1,3 @@
+[workspace]
+resolver = "3"
+members = ["crates/dpc-common", "crates/dpc-compiler"]
