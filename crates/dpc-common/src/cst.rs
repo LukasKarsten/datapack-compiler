@@ -37,6 +37,7 @@ pub enum ArgumentValue {
     Float(Float),
     Double(Double),
     String(String),
+    Angle(Angle),
 }
 
 #[derive(Debug)]
@@ -76,6 +77,12 @@ pub struct String {
     pub kind: StringKind,
 }
 
+#[derive(Debug)]
+pub struct Angle {
+    pub value: Float,
+    pub relative: bool,
+}
+
 pub trait Visitor: Sized {
     fn visit_item(&mut self, item: &Item) {
         walk_item(self, item);
@@ -95,6 +102,7 @@ pub trait Visitor: Sized {
     fn visit_float(&mut self, _float: &Float) {}
     fn visit_double(&mut self, _double: &Double) {}
     fn visit_string(&mut self, _string: &String) {}
+    fn visit_angle(&mut self, _angle: &Angle) {}
     fn visit_parse_error(&mut self, _error: &ParseError) {}
 }
 
@@ -123,6 +131,7 @@ pub fn walk_argument(visitor: &mut impl Visitor, argument: &Argument) {
         ArgumentValue::Float(float) => visitor.visit_float(float),
         ArgumentValue::Double(double) => visitor.visit_double(double),
         ArgumentValue::String(string) => visitor.visit_string(string),
+        ArgumentValue::Angle(string) => visitor.visit_angle(string),
     }
 
     for error in &argument.errors {
@@ -134,4 +143,8 @@ pub fn walk_block(visitor: &mut impl Visitor, block: &Block) {
     for item in &block.items {
         visitor.visit_item(item);
     }
+}
+
+pub fn walk_angle(visitor: &mut impl Visitor, angle: &Angle) {
+    visitor.visit_float(&angle.value);
 }

@@ -101,7 +101,7 @@ impl Argument {
             Self::Float { .. } => Ok(cst::ArgumentValue::Float(parse_float(ctx))),
             Self::Double { .. } => Ok(cst::ArgumentValue::Double(parse_double(ctx))),
             Self::String(kind) => parse_string(ctx, *kind).map(cst::ArgumentValue::String),
-            Self::Angle => todo!(),
+            Self::Angle => Ok(cst::ArgumentValue::Angle(parse_angle(ctx))),
             Self::BlockPos => todo!(),
             Self::BlockPredicate => todo!(),
             Self::BlockState => todo!(),
@@ -393,4 +393,16 @@ fn parse_greedy_phrase(ctx: &mut ParseArgContext<'_, '_>) -> Result<cst::String,
         value: Some(symbol),
         kind: cst::StringKind::Bare,
     })
+}
+
+fn parse_angle(ctx: &mut ParseArgContext<'_, '_>) -> cst::Angle {
+    let relative = ctx.reader.peek() == Some('~');
+    if relative {
+        ctx.reader.advance();
+    }
+    let mut value = cst::Float { value: Some(0.0) };
+    if ctx.reader.peek().is_some_and(|chr| !chr.is_whitespace()) {
+        value = parse_float(ctx);
+    }
+    cst::Angle { value, relative }
 }
