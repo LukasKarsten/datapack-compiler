@@ -387,8 +387,7 @@ fn parse_unquoted_string(ctx: &mut ParseArgContext<'_, '_>) -> Result<cst::Strin
 }
 
 fn parse_greedy_phrase(ctx: &mut ParseArgContext<'_, '_>) -> Result<cst::String, ParseError> {
-    // TODO: Trim the string
-    let symbol = ctx.interner.intern(ctx.reader.remaining_src());
+    let symbol = ctx.interner.intern(ctx.reader.remaining_src().trim_end());
     ctx.reader.set_pos(ctx.reader.get_src().len());
     Ok(cst::String {
         value: Some(symbol),
