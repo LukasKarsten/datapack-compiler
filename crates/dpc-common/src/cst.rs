@@ -38,6 +38,8 @@ pub enum ArgumentValue {
     Double(Double),
     String(String),
     Angle(Angle),
+    Coordinates2(Coordinates<2>),
+    Coordinates3(Coordinates<3>),
 }
 
 #[derive(Debug)]
@@ -45,33 +47,57 @@ pub struct Block {
     pub items: Vec<Item>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Boolean {
     pub value: Option<bool>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Integer {
     pub value: Option<i32>,
 }
 
-#[derive(Debug)]
+impl Integer {
+    pub const ZERO: Self = Self::new(0);
+
+    pub const fn new(value: i32) -> Self {
+        Self { value: Some(value) }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct Float {
     pub value: Option<f32>,
 }
 
-#[derive(Debug)]
+impl Float {
+    pub const ZERO: Self = Self::new(0.0);
+
+    pub const fn new(value: f32) -> Self {
+        Self { value: Some(value) }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct Double {
     pub value: Option<f64>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+impl Double {
+    pub const ZERO: Self = Self::new(0.0);
+
+    pub const fn new(value: f64) -> Self {
+        Self { value: Some(value) }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StringKind {
     Bare,
     Quotable,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct String {
     pub value: Option<Symbol>,
     pub kind: StringKind,
@@ -81,6 +107,18 @@ pub struct String {
 pub struct Angle {
     pub value: Float,
     pub relative: bool,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct WorldCoordinate {
+    pub value: Double,
+    pub relative: bool,
+}
+
+#[derive(Debug)]
+pub enum Coordinates<const N: usize> {
+    World([WorldCoordinate; N]),
+    Local([Double; N]),
 }
 
 pub trait Visitor: Sized {

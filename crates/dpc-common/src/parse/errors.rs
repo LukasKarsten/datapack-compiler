@@ -30,6 +30,9 @@ pub enum ParseError {
     UnterminatedString(UnterminatedStringError),
     InvalidStringChars(InvalidStringCharsError),
     QuotedSingleWord(QuotedSingleWordError),
+    IncompleteLocalCoordinates(IncompleteLocalCoordinatesError),
+    ExpectedLocalCoordinate(ExpectedLocalCoordinateError),
+    MixedCoordinates(MixedCoordiantesError),
 }
 
 impl EmitDiagnostic for ParseError {
@@ -45,6 +48,9 @@ impl EmitDiagnostic for ParseError {
             Self::UnterminatedString(error) => error.emit(ctx),
             Self::InvalidStringChars(error) => error.emit(ctx),
             Self::QuotedSingleWord(error) => error.emit(ctx),
+            Self::IncompleteLocalCoordinates(error) => error.emit(ctx),
+            Self::ExpectedLocalCoordinate(error) => error.emit(ctx),
+            Self::MixedCoordinates(error) => error.emit(ctx),
         }
     }
 }
@@ -227,6 +233,39 @@ impl EmitDiagnostic for QuotedSingleWordError {
     fn emit(&self, _: &ParseContext<'_>) -> Diagnostic {
         Diagnostic::error(self.span, "Cannot quote single-word strings")
             .with_label(Label::new(self.span, "This string must not be quoted"))
+    }
+}
+
+#[derive(Debug)]
+pub struct IncompleteLocalCoordinatesError {
+    pub span: Span,
+}
+
+impl EmitDiagnostic for IncompleteLocalCoordinatesError {
+    fn emit(&self, _: &ParseContext<'_>) -> Diagnostic {
+        Diagnostic::error(self.span, "Incomplete local coordinates")
+    }
+}
+
+#[derive(Debug)]
+pub struct ExpectedLocalCoordinateError {
+    pub span: Span,
+}
+
+impl EmitDiagnostic for ExpectedLocalCoordinateError {
+    fn emit(&self, _: &ParseContext<'_>) -> Diagnostic {
+        Diagnostic::error(self.span, "Expected local coordinate")
+    }
+}
+
+#[derive(Debug)]
+pub struct MixedCoordiantesError {
+    pub span: Span,
+}
+
+impl EmitDiagnostic for MixedCoordiantesError {
+    fn emit(&self, _: &ParseContext<'_>) -> Diagnostic {
+        Diagnostic::error(self.span, "Cannot mix world and local coordinates")
     }
 }
 

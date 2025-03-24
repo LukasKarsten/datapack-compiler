@@ -11,7 +11,8 @@ use crate::{
 use super::{
     Reader,
     errors::{
-        InvalidStringCharsError, ParseBoolError, ParseDoubleError, ParseError, ParseFloatError,
+        ExpectedLocalCoordinateError, IncompleteLocalCoordinatesError, InvalidStringCharsError,
+        MixedCoordiantesError, ParseBoolError, ParseDoubleError, ParseError, ParseFloatError,
         ParseIntegerError, QuotedSingleWordError, UnterminatedStringError,
     },
 };
@@ -102,11 +103,11 @@ impl Argument {
             Self::Double { .. } => Ok(cst::ArgumentValue::Double(parse_double(ctx))),
             Self::String(kind) => parse_string(ctx, *kind).map(cst::ArgumentValue::String),
             Self::Angle => Ok(cst::ArgumentValue::Angle(parse_angle(ctx))),
-            Self::BlockPos => todo!(),
+            Self::BlockPos => Ok(cst::ArgumentValue::Coordinates3(parse_block_pos(ctx))),
             Self::BlockPredicate => todo!(),
             Self::BlockState => todo!(),
             Self::Color => todo!(),
-            Self::ColumnPos => todo!(),
+            Self::ColumnPos => Ok(cst::ArgumentValue::Coordinates2(parse_column_pos(ctx))),
             Self::Component => todo!(),
             Self::Dimension => todo!(),
             Self::Entity {
@@ -150,8 +151,8 @@ impl Argument {
             Self::TemplateMirror => todo!(),
             Self::TemplateRotation => todo!(),
             Self::Time { min: _ } => todo!(),
-            Self::Vec2 => todo!(),
-            Self::Vec3 => todo!(),
+            Self::Vec2 => Ok(cst::ArgumentValue::Coordinates2(parse_vec2(ctx))),
+            Self::Vec3 => Ok(cst::ArgumentValue::Coordinates3(parse_vec3(ctx))),
         }
     }
 }
@@ -400,9 +401,125 @@ fn parse_angle(ctx: &mut ParseArgContext<'_, '_>) -> cst::Angle {
     if relative {
         ctx.reader.advance();
     }
-    let mut value = cst::Float { value: Some(0.0) };
+    let mut value = cst::Float::ZERO;
     if ctx.reader.peek().is_some_and(|chr| !chr.is_whitespace()) {
         value = parse_float(ctx);
     }
     cst::Angle { value, relative }
+}
+
+fn parse_local_coordinates<const N: usize>(
+    ctx: &mut ParseArgContext<'_, '_>,
+) -> cst::Coordinates<N> {
+    let start = ctx.reader.get_pos();
+
+    let mut coords = [cst::Double::ZERO; N];
+
+    for coord in &mut coords {
+        ctx.reader.skip_whitespace();
+
+        if !ctx.reader.has_more() {
+            ctx.error(ParseError::IncompleteLocalCoordinates(
+                IncompleteLocalCoordinatesError {
+                    span: Span::new(start, ctx.reader.get_pos()),
+                },
+            ));
+            break;
+        }
+
+        if ctx.reader.peek() == Some('^') {
+            ctx.reader.advance();
+        } else if ctx.reader.peek() == Some('~') {
+            ctx.error(ParseError::MixedCoordinates(MixedCoordiantesError {
+                span: Span::new(ctx.reader.get_pos(), ctx.reader.get_next_pos()),
+            }));
+            ctx.reader.advance();
+        } else {
+            ctx.error(ParseError::ExpectedLocalCoordinate(
+                ExpectedLocalCoordinateError {
+                    span: Span::new(ctx.reader.get_pos(), ctx.reader.get_next_pos()),
+                },
+            ));
+        }
+
+        if ctx.reader.peek().is_some_and(|chr| !chr.is_whitespace()) {
+            *coord = parse_double(ctx);
+        }
+    }
+
+    cst::Coordinates::Local(coords)
+}
+
+fn parse_world_coordinates<const N: usize>(
+    ctx: &mut ParseArgContext<'_, '_>,
+    mut number_parser: impl FnMut(&mut ParseArgContext<'_, '_>, bool) -> cst::Double,
+) -> cst::Coordinates<N> {
+    let start = ctx.reader.get_pos();
+
+    let mut coords = [cst::WorldCoordinate {
+        value: cst::Double::ZERO,
+        relative: false,
+    }; N];
+
+    for coord in &mut coords {
+        ctx.reader.skip_whitespace();
+
+        if !ctx.reader.has_more() {
+            ctx.error(ParseError::IncompleteLocalCoordinates(
+                IncompleteLocalCoordinatesError {
+                    span: Span::new(start, ctx.reader.get_pos()),
+                },
+            ));
+            break;
+        }
+
+        if ctx.reader.peek() == Some('~') {
+            coord.relative = true;
+            ctx.reader.advance();
+        } else if ctx.reader.peek() == Some('^') {
+            ctx.error(ParseError::MixedCoordinates(MixedCoordiantesError {
+                span: Span::new(ctx.reader.get_pos(), ctx.reader.get_next_pos()),
+            }));
+            ctx.reader.advance();
+        }
+
+        if ctx.reader.peek().is_some_and(|chr| !chr.is_whitespace()) || !coord.relative {
+            coord.value = number_parser(ctx, coord.relative);
+        }
+    }
+
+    cst::Coordinates::World(coords)
+}
+
+fn parse_block_pos(ctx: &mut ParseArgContext<'_, '_>) -> cst::Coordinates<3> {
+    match ctx.reader.peek() {
+        Some('^') => parse_local_coordinates(ctx),
+        _ => parse_world_coordinates(ctx, |ctx, relative| match relative {
+            true => parse_double(ctx),
+            false => {
+                let integer = parse_integer(ctx);
+                cst::Double {
+                    value: integer.value.map(|value| value as f64),
+                }
+            }
+        }),
+    }
+}
+
+fn parse_vec3(ctx: &mut ParseArgContext<'_, '_>) -> cst::Coordinates<3> {
+    match ctx.reader.peek() {
+        Some('^') => parse_local_coordinates(ctx),
+        _ => parse_world_coordinates(ctx, |ctx, _| parse_double(ctx)),
+    }
+}
+
+fn parse_vec2(ctx: &mut ParseArgContext<'_, '_>) -> cst::Coordinates<2> {
+    match ctx.reader.peek() {
+        Some('^') => parse_local_coordinates(ctx),
+        _ => parse_world_coordinates(ctx, |ctx, _| parse_double(ctx)),
+    }
+}
+
+fn parse_column_pos(ctx: &mut ParseArgContext<'_, '_>) -> cst::Coordinates<2> {
+    parse_world_coordinates(ctx, |ctx, _| parse_double(ctx))
 }
