@@ -1,12 +1,11 @@
+use std::str::FromStr;
+
 use super::{ParseArgContext, StringKind};
 use crate::{
     intern::{Interner, Symbol},
-    parse::{
-        Reader,
-        errors::{
-            InvalidStringCharsError, ParseBoolError, ParseDoubleError, ParseError, ParseFloatError,
-            ParseIntegerError, QuotedSingleWordError, UnterminatedStringError,
-        },
+    parse::errors::{
+        InvalidStringCharsError, NumberType, ParseBoolError, ParseError, ParseNumberError,
+        QuotedSingleWordError, UnterminatedStringError,
     },
     span::Span,
 };
@@ -75,55 +74,43 @@ pub fn parse_bool(ctx: &mut ParseArgContext<'_, '_>) -> Boolean {
     Boolean { value }
 }
 
-fn read_number_string<'src>(reader: &mut Reader<'src>) -> Result<(&'src str, Span), ParseError> {
+fn parse_number<T: FromStr>(ctx: &mut ParseArgContext<'_, '_>, kind: NumberType) -> Option<T> {
     fn is_number_char(chr: char) -> bool {
         matches!(chr, '0'..='9' | '.' | '-')
     }
 
-    let range = reader.read_range_until(char::is_whitespace);
+    let range = ctx.reader.read_range_until(char::is_whitespace);
     let span = range.clone().into();
-    let string = &reader.get_src()[range.clone()];
+    let string = &ctx.reader.get_src()[range.clone()];
     if !string.chars().all(is_number_char) {
-        Err(ParseError::ParseInteger(ParseIntegerError { span }))
-    } else {
-        Ok((string, span))
+        ctx.error(ParseError::ParseNumber(ParseNumberError { span, kind }));
+        return None;
     }
+
+    let Ok(number) = string.parse() else {
+        ctx.error(ParseError::ParseNumber(ParseNumberError { span, kind }));
+        return None;
+    };
+
+    Some(number)
 }
 
 pub fn parse_integer(ctx: &mut ParseArgContext<'_, '_>) -> Integer {
-    let mut value = None;
-    match read_number_string(ctx.reader) {
-        Ok((string, span)) => match string.parse() {
-            Ok(number) => value = Some(number),
-            Err(_) => ctx.error(ParseError::ParseInteger(ParseIntegerError { span })),
-        },
-        Err(err) => ctx.error(err),
+    Integer {
+        value: parse_number(ctx, NumberType::Integer),
     }
-    Integer { value }
 }
 
 pub fn parse_float(ctx: &mut ParseArgContext<'_, '_>) -> Float {
-    let mut value = None;
-    match read_number_string(ctx.reader) {
-        Ok((string, span)) => match string.parse() {
-            Ok(number) => value = Some(number),
-            Err(_) => ctx.error(ParseError::ParseFloat(ParseFloatError { span })),
-        },
-        Err(err) => ctx.error(err),
+    Float {
+        value: parse_number(ctx, NumberType::Float),
     }
-    Float { value }
 }
 
 pub fn parse_double(ctx: &mut ParseArgContext<'_, '_>) -> Double {
-    let mut value = None;
-    match read_number_string(ctx.reader) {
-        Ok((string, span)) => match string.parse() {
-            Ok(number) => value = Some(number),
-            Err(_) => ctx.error(ParseError::ParseDouble(ParseDoubleError { span })),
-        },
-        Err(err) => ctx.error(err),
+    Double {
+        value: parse_number(ctx, NumberType::Double),
     }
-    Double { value }
 }
 
 pub fn parse_text(ctx: &mut ParseArgContext<'_, '_>, kind: StringKind) -> Result<Text, ParseError> {

@@ -24,9 +24,7 @@ pub enum ParseError {
     InvalidLiteral(InvalidLiteralError),
     TooManyArguments(TooManyArgumentsError),
     ParseBool(ParseBoolError),
-    ParseDouble(ParseDoubleError),
-    ParseFloat(ParseFloatError),
-    ParseInteger(ParseIntegerError),
+    ParseNumber(ParseNumberError),
     UnterminatedString(UnterminatedStringError),
     InvalidStringChars(InvalidStringCharsError),
     QuotedSingleWord(QuotedSingleWordError),
@@ -43,9 +41,7 @@ impl EmitDiagnostic for ParseError {
             Self::InvalidLiteral(error) => error.emit(ctx),
             Self::TooManyArguments(error) => error.emit(ctx),
             Self::ParseBool(error) => error.emit(ctx),
-            Self::ParseDouble(error) => error.emit(ctx),
-            Self::ParseFloat(error) => error.emit(ctx),
-            Self::ParseInteger(error) => error.emit(ctx),
+            Self::ParseNumber(error) => error.emit(ctx),
             Self::UnterminatedString(error) => error.emit(ctx),
             Self::InvalidStringChars(error) => error.emit(ctx),
             Self::QuotedSingleWord(error) => error.emit(ctx),
@@ -162,43 +158,27 @@ impl EmitDiagnostic for ParseBoolError {
 }
 
 #[derive(Debug)]
-pub struct ParseDoubleError {
-    pub span: Span,
-}
-
-impl EmitDiagnostic for ParseDoubleError {
-    fn emit(&self, _: &ParseContext<'_>) -> Diagnostic {
-        Diagnostic::error(self.span, "Invalid double").with_label(Label::new(
-            self.span,
-            format!("Expected a {}", "double".fg(Color::Magenta)),
-        ))
-    }
+pub enum NumberType {
+    Integer,
+    Float,
+    Double,
 }
 
 #[derive(Debug)]
-pub struct ParseFloatError {
+pub struct ParseNumberError {
     pub span: Span,
+    pub kind: NumberType,
 }
 
-impl EmitDiagnostic for ParseFloatError {
+impl EmitDiagnostic for ParseNumberError {
     fn emit(&self, _: &ParseContext<'_>) -> Diagnostic {
-        Diagnostic::error(self.span, "Invalid float").with_label(Label::new(
+        Diagnostic::error(self.span, "Invalid number").with_label(Label::new(
             self.span,
-            format!("Expected a {}", "float".fg(Color::Magenta)),
-        ))
-    }
-}
-
-#[derive(Debug)]
-pub struct ParseIntegerError {
-    pub span: Span,
-}
-
-impl EmitDiagnostic for ParseIntegerError {
-    fn emit(&self, _: &ParseContext<'_>) -> Diagnostic {
-        Diagnostic::error(self.span, "Invalid integer").with_label(Label::new(
-            self.span,
-            format!("Expected an {}", "integer".fg(Color::Magenta)),
+            match self.kind {
+                NumberType::Integer => format!("Expected an {}", "integer".fg(Color::Magenta)),
+                NumberType::Float => format!("Expected a {}", "float".fg(Color::Magenta)),
+                NumberType::Double => format!("Expected a {}", "double".fg(Color::Magenta)),
+            },
         ))
     }
 }
