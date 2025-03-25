@@ -1,11 +1,10 @@
 use std::{iter, num::NonZeroUsize};
 
+use super::{Node, NodeKind};
 use crate::{
     parsing_tree::{ParsingNode, ParsingTree},
     smallstring::SmallString,
 };
-
-use super::{Node, NodeKind};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BuildNodeId(usize);

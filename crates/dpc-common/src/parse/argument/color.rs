@@ -1,3 +1,11 @@
+use super::ParseArgContext;
+use crate::parse::errors::{InvalidColorError, ParseError};
+
+#[derive(Debug)]
+pub struct Color {
+    pub color: Option<ChatColor>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ChatColor {
     Black,
@@ -68,4 +76,20 @@ impl ChatColor {
             Self::White => "white",
         }
     }
+}
+
+pub fn parse(ctx: &mut ParseArgContext<'_, '_>) -> Color {
+    let (span, name) = ctx
+        .reader
+        .parse_with_span(|reader| reader.read_until(char::is_whitespace));
+
+    let color = ChatColor::from_string(name);
+
+    if color.is_none() {
+        ctx.error(ParseError::InvalidColor(InvalidColorError {
+            span: span.into(),
+        }));
+    }
+
+    Color { color }
 }

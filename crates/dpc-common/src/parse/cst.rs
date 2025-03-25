@@ -1,6 +1,7 @@
 use smallvec::SmallVec;
 
-use crate::{arguments::ChatColor, intern::Symbol, parse::errors::ParseError, span::Span};
+use super::argument::{Angle, Boolean, Color, Coordinates, Double, Float, Integer, Text};
+use crate::{parse::errors::ParseError, span::Span};
 
 #[derive(Debug)]
 pub enum Item {
@@ -36,7 +37,7 @@ pub enum ArgumentValue {
     Integer(Integer),
     Float(Float),
     Double(Double),
-    String(String),
+    String(Text),
     Angle(Angle),
     Coordinates2(Coordinates<2>),
     Coordinates3(Coordinates<3>),
@@ -46,85 +47,6 @@ pub enum ArgumentValue {
 #[derive(Debug)]
 pub struct Block {
     pub items: Vec<Item>,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Boolean {
-    pub value: Option<bool>,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Integer {
-    pub value: Option<i32>,
-}
-
-impl Integer {
-    pub const ZERO: Self = Self::new(0);
-
-    pub const fn new(value: i32) -> Self {
-        Self { value: Some(value) }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Float {
-    pub value: Option<f32>,
-}
-
-impl Float {
-    pub const ZERO: Self = Self::new(0.0);
-
-    pub const fn new(value: f32) -> Self {
-        Self { value: Some(value) }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Double {
-    pub value: Option<f64>,
-}
-
-impl Double {
-    pub const ZERO: Self = Self::new(0.0);
-
-    pub const fn new(value: f64) -> Self {
-        Self { value: Some(value) }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum StringKind {
-    Bare,
-    Quotable,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct String {
-    pub value: Option<Symbol>,
-    pub kind: StringKind,
-}
-
-#[derive(Debug)]
-pub struct Angle {
-    pub value: Float,
-    pub relative: bool,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct WorldCoordinate {
-    pub value: Double,
-    pub relative: bool,
-}
-
-#[derive(Debug)]
-pub enum Coordinates<const N: usize> {
-    World([WorldCoordinate; N]),
-    Local([Double; N]),
-}
-
-#[derive(Debug)]
-pub struct Color {
-    pub color: Option<ChatColor>,
 }
 
 pub trait Visitor: Sized {

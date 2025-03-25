@@ -2,9 +2,8 @@ use std::{fs, path::PathBuf, sync::Arc};
 
 use clap::Parser;
 use dpc_common::{
-    cst,
     parse::{
-        ParseContext,
+        ParseContext, cst,
         errors::{EmitDiagnostic, ParseError},
     },
     source::SourceFile,

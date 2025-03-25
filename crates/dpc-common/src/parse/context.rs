@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use crate::{
-    ParsingTree, cst::Block, intern::StaticInterner, parse::errors::ParseError, source::SourceFile,
+    ParsingTree,
+    intern::StaticInterner,
+    parse::{cst::Block, errors::ParseError},
+    source::SourceFile,
 };
 
 pub struct ParseContext<'src> {

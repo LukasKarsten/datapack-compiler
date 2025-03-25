@@ -2,11 +2,12 @@ use std::{cmp::Ordering, fmt, iter, ops::Range};
 
 use smallvec::SmallVec;
 
+use super::{Node, NodeKind};
 use crate::{
-    cst::{Argument, ArgumentValue, Block, Command, Item},
     parse::{
         ParseContext, Reader,
         argument::ParseArgContext,
+        cst::{Argument, ArgumentValue, Block, Command, Item},
         errors::{
             IndentationError, IndentationErrorKind, InvalidLiteralError, ParseError,
             TooManyArgumentsError,
@@ -14,8 +15,6 @@ use crate::{
     },
     span::Span,
 };
-
-use super::{Node, NodeKind};
 
 #[derive(Debug, Clone)]
 pub struct ParsingNode {
