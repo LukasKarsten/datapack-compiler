@@ -95,9 +95,15 @@ impl Argument {
     ) -> Result<cst::ArgumentValue, ParseError> {
         match self {
             Self::Bool => Ok(cst::ArgumentValue::Boolean(primitives::parse_bool(ctx))),
-            Self::Integer { .. } => Ok(cst::ArgumentValue::Integer(primitives::parse_integer(ctx))),
-            Self::Float { .. } => Ok(cst::ArgumentValue::Float(primitives::parse_float(ctx))),
-            Self::Double { .. } => Ok(cst::ArgumentValue::Double(primitives::parse_double(ctx))),
+            Self::Integer { min, max } => Ok(cst::ArgumentValue::Integer(
+                primitives::parse_integer(ctx, *min, *max),
+            )),
+            Self::Float { min, max } => Ok(cst::ArgumentValue::Float(primitives::parse_float(
+                ctx, *min, *max,
+            ))),
+            Self::Double { min, max } => Ok(cst::ArgumentValue::Double(primitives::parse_double(
+                ctx, *min, *max,
+            ))),
             Self::String(kind) => {
                 primitives::parse_text(ctx, *kind).map(cst::ArgumentValue::String)
             }

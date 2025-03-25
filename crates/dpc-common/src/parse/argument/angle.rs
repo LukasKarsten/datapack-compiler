@@ -13,7 +13,7 @@ pub fn parse(ctx: &mut ParseArgContext<'_, '_>) -> Angle {
     }
     let mut value = Float::ZERO;
     if ctx.reader.peek().is_some_and(|chr| !chr.is_whitespace()) {
-        value = parse_float(ctx);
+        value = parse_float(ctx, f32::MIN, f32::MAX);
     }
     Angle { value, relative }
 }

@@ -25,6 +25,7 @@ pub enum ParseError {
     TooManyArguments(TooManyArgumentsError),
     ParseBool(ParseBoolError),
     ParseNumber(ParseNumberError),
+    NumberOutOfBounds(NumberOutOfBoundsError),
     UnterminatedString(UnterminatedStringError),
     InvalidStringChars(InvalidStringCharsError),
     QuotedSingleWord(QuotedSingleWordError),
@@ -42,6 +43,7 @@ impl EmitDiagnostic for ParseError {
             Self::TooManyArguments(error) => error.emit(ctx),
             Self::ParseBool(error) => error.emit(ctx),
             Self::ParseNumber(error) => error.emit(ctx),
+            Self::NumberOutOfBounds(error) => error.emit(ctx),
             Self::UnterminatedString(error) => error.emit(ctx),
             Self::InvalidStringChars(error) => error.emit(ctx),
             Self::QuotedSingleWord(error) => error.emit(ctx),
@@ -180,6 +182,25 @@ impl EmitDiagnostic for ParseNumberError {
                 NumberType::Double => format!("Expected a {}", "double".fg(Color::Magenta)),
             },
         ))
+    }
+}
+
+#[derive(Debug)]
+pub struct NumberOutOfBoundsError {
+    pub span: Span,
+    pub min: f64,
+    pub max: f64,
+}
+
+impl EmitDiagnostic for NumberOutOfBoundsError {
+    fn emit(&self, _: &ParseContext<'_>) -> Diagnostic {
+        Diagnostic::error(
+            self.span,
+            format!(
+                "Number out of bounds: must be at least {} and at most {}",
+                self.min, self.max
+            ),
+        )
     }
 }
 

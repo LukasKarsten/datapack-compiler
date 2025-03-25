@@ -55,7 +55,7 @@ fn parse_local_coordinates<const N: usize>(ctx: &mut ParseArgContext<'_, '_>) ->
         }
 
         if ctx.reader.peek().is_some_and(|chr| !chr.is_whitespace()) {
-            *coord = parse_double(ctx);
+            *coord = parse_double(ctx, f64::MIN, f64::MAX);
         }
     }
 
@@ -107,9 +107,9 @@ pub fn parse_block_pos(ctx: &mut ParseArgContext<'_, '_>) -> Coordinates<3> {
     match ctx.reader.peek() {
         Some('^') => parse_local_coordinates(ctx),
         _ => parse_world_coordinates(ctx, |ctx, relative| match relative {
-            true => parse_double(ctx),
+            true => parse_double(ctx, f64::MIN, f64::MAX),
             false => {
-                let integer = parse_integer(ctx);
+                let integer = parse_integer(ctx, i32::MIN, i32::MAX);
                 Double {
                     value: integer.value.map(|value| value as f64),
                 }
@@ -121,17 +121,17 @@ pub fn parse_block_pos(ctx: &mut ParseArgContext<'_, '_>) -> Coordinates<3> {
 pub fn parse_vec3(ctx: &mut ParseArgContext<'_, '_>) -> Coordinates<3> {
     match ctx.reader.peek() {
         Some('^') => parse_local_coordinates(ctx),
-        _ => parse_world_coordinates(ctx, |ctx, _| parse_double(ctx)),
+        _ => parse_world_coordinates(ctx, |ctx, _| parse_double(ctx, f64::MIN, f64::MAX)),
     }
 }
 
 pub fn parse_vec2(ctx: &mut ParseArgContext<'_, '_>) -> Coordinates<2> {
     match ctx.reader.peek() {
         Some('^') => parse_local_coordinates(ctx),
-        _ => parse_world_coordinates(ctx, |ctx, _| parse_double(ctx)),
+        _ => parse_world_coordinates(ctx, |ctx, _| parse_double(ctx, f64::MIN, f64::MAX)),
     }
 }
 
 pub fn parse_column_pos(ctx: &mut ParseArgContext<'_, '_>) -> Coordinates<2> {
-    parse_world_coordinates(ctx, |ctx, _| parse_double(ctx))
+    parse_world_coordinates(ctx, |ctx, _| parse_double(ctx, f64::MIN, f64::MAX))
 }

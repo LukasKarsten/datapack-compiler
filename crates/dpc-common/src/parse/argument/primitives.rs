@@ -4,8 +4,8 @@ use super::{ParseArgContext, StringKind};
 use crate::{
     intern::{Interner, Symbol},
     parse::errors::{
-        InvalidStringCharsError, NumberType, ParseBoolError, ParseError, ParseNumberError,
-        QuotedSingleWordError, UnterminatedStringError,
+        InvalidStringCharsError, NumberOutOfBoundsError, NumberType, ParseBoolError, ParseError,
+        ParseNumberError, QuotedSingleWordError, UnterminatedStringError,
     },
     span::Span,
 };
@@ -74,7 +74,12 @@ pub fn parse_bool(ctx: &mut ParseArgContext<'_, '_>) -> Boolean {
     Boolean { value }
 }
 
-fn parse_number<T: FromStr>(ctx: &mut ParseArgContext<'_, '_>, kind: NumberType) -> Option<T> {
+fn parse_number<T: FromStr + PartialOrd + Into<f64>>(
+    ctx: &mut ParseArgContext<'_, '_>,
+    kind: NumberType,
+    min: T,
+    max: T,
+) -> Option<T> {
     fn is_number_char(chr: char) -> bool {
         matches!(chr, '0'..='9' | '.' | '-')
     }
@@ -87,29 +92,37 @@ fn parse_number<T: FromStr>(ctx: &mut ParseArgContext<'_, '_>, kind: NumberType)
         return None;
     }
 
-    let Ok(number) = string.parse() else {
+    let Ok(number) = string.parse::<T>() else {
         ctx.error(ParseError::ParseNumber(ParseNumberError { span, kind }));
         return None;
     };
 
+    if number < min || number > max {
+        ctx.error(ParseError::NumberOutOfBounds(NumberOutOfBoundsError {
+            span,
+            min: min.into(),
+            max: max.into(),
+        }));
+    }
+
     Some(number)
 }
 
-pub fn parse_integer(ctx: &mut ParseArgContext<'_, '_>) -> Integer {
+pub fn parse_integer(ctx: &mut ParseArgContext<'_, '_>, min: i32, max: i32) -> Integer {
     Integer {
-        value: parse_number(ctx, NumberType::Integer),
+        value: parse_number(ctx, NumberType::Integer, min, max),
     }
 }
 
-pub fn parse_float(ctx: &mut ParseArgContext<'_, '_>) -> Float {
+pub fn parse_float(ctx: &mut ParseArgContext<'_, '_>, min: f32, max: f32) -> Float {
     Float {
-        value: parse_number(ctx, NumberType::Float),
+        value: parse_number(ctx, NumberType::Float, min, max),
     }
 }
 
-pub fn parse_double(ctx: &mut ParseArgContext<'_, '_>) -> Double {
+pub fn parse_double(ctx: &mut ParseArgContext<'_, '_>, min: f64, max: f64) -> Double {
     Double {
-        value: parse_number(ctx, NumberType::Double),
+        value: parse_number(ctx, NumberType::Double, min, max),
     }
 }
 
